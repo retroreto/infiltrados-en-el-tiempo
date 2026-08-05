@@ -3,6 +3,8 @@ import { Volume2, VolumeX, HelpCircle, ShieldAlert, Sparkles, Smartphone, Users,
 import { soundEngine } from '../utils/AudioService';
 import { GameMode } from '../types';
 
+const smallLogoUrl = new URL('../assets/logo-infiltrados-white-small.png', import.meta.url).href;
+
 interface NavbarProps {
   roomCode?: string;
   mode?: GameMode;
@@ -27,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({ roomCode, mode, onOpenRules, onE
         className="flex items-center gap-2 cursor-pointer group"
       >
         <img
-          src="/logo-infiltrados-white-small.png"
+          src={smallLogoUrl}
           alt="RetroReto Logo"
           className="h-7 w-auto object-contain drop-shadow-[0_0_8px_rgba(0,240,255,0.3)] transition-transform group-hover:scale-105"
           referrerPolicy="no-referrer"
