@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Rocket, Users, Smartphone, Sparkles, Play, ShieldAlert, ArrowRight, Radio, Shield, Terminal } from 'lucide-react';
 import { AvatarPicker } from './AvatarPicker';
 import { soundEngine } from '../utils/AudioService';
-import mainLogo from '../assets/logo-infiltrados-white.png';
 
 interface HomeViewProps {
   playerName: string;
@@ -87,7 +86,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {/* Logo grande */}
             <div className="py-2 flex justify-center">
               <img
-                src={mainLogo}
+                src="/logo-infiltrados-white.png"
                 alt="RetroReto: Infiltrados en el tiempo"
                 className="w-full max-w-xs sm:max-w-sm h-auto object-contain drop-shadow-[0_0_15px_rgba(0,240,255,0.4)]"
                 referrerPolicy="no-referrer"

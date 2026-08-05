@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import logoImg from '../assets/logo-infiltrados-white-small.png';
 
 interface RetroRetoLogoProps {
   className?: string;
@@ -41,7 +40,7 @@ export const RetroRetoLogo: React.FC<RetroRetoLogoProps> = ({
       {/* Vite WebP Image Logo */}
       {!imgError ? (
         <img
-          src={logoImg}
+          src="/logo-infiltrados-white-small.png"
           alt="Infiltrados RetroReto Logo"
           onError={() => setImgError(true)}
           className={`object-contain shrink-0 max-w-full drop-shadow-[0_0_12px_rgba(0,240,255,0.4)] ${imgSizeClasses[size]}`}

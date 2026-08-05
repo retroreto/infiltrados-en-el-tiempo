@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Volume2, VolumeX, HelpCircle, ShieldAlert, Sparkles, Smartphone, Users, LogOut } from 'lucide-react';
 import { soundEngine } from '../utils/AudioService';
 import { GameMode } from '../types';
-import smallLogo from '../assets/logo-infiltrados-white-small.png';
 
 interface NavbarProps {
   roomCode?: string;
@@ -28,7 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({ roomCode, mode, onOpenRules, onE
         className="flex items-center gap-2 cursor-pointer group"
       >
         <img
-          src={smallLogo}
+          src="/logo-infiltrados-white-small.png"
           alt="RetroReto Logo"
           className="h-7 w-auto object-contain drop-shadow-[0_0_8px_rgba(0,240,255,0.3)] transition-transform group-hover:scale-105"
           referrerPolicy="no-referrer"
