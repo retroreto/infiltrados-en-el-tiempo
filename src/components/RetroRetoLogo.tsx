@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 
-const smallLogoUrl = new URL('../assets/logo-infiltrados-white-small.png', import.meta.url).href;
-
 interface RetroRetoLogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -42,7 +40,7 @@ export const RetroRetoLogo: React.FC<RetroRetoLogoProps> = ({
       {/* Vite WebP Image Logo */}
       {!imgError ? (
         <img
-          src={smallLogoUrl}
+          src="/logo-infiltrados-white-small.png"
           alt="Infiltrados RetroReto Logo"
           onError={() => setImgError(true)}
           className={`object-contain shrink-0 max-w-full drop-shadow-[0_0_12px_rgba(0,240,255,0.4)] ${imgSizeClasses[size]}`}
