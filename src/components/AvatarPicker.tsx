@@ -39,9 +39,9 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
   const IconComp = AVATAR_ICONS[selectedIconIndex] || Rocket;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
       {/* Avatar Preview */}
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center pb-3">
         <div 
           className="relative w-20 h-20 rounded-2xl flex items-center justify-center p-1 transition-all shadow-lg"
           style={{
@@ -52,7 +52,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
           }}
         >
           <IconComp className="w-10 h-10 transition-transform duration-300 hover:scale-110" style={{ color: selectedColor }} />
-          <div className="absolute -bottom-2 px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase text-slate-950 bg-white">
+          <div className="absolute -bottom-2.5 px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase text-slate-950 bg-white shadow-md">
             TRAJE
           </div>
         </div>
