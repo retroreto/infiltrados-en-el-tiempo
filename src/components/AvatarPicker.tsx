@@ -60,9 +60,6 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
 
       {/* Color Swatches */}
       <div>
-        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-center">
-          Color del Traje Espacial
-        </label>
         <div className="grid grid-cols-8 gap-1.5">
           {AVATAR_COLORS.map(c => (
             <button
@@ -83,9 +80,6 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
 
       {/* Icon Selector */}
       <div>
-        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-center">
-          Insignia del Casco
-        </label>
         <div className="flex justify-center gap-2">
           {AVATAR_ICONS.map((Icon, idx) => (
             <button

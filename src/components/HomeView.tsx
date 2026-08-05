@@ -152,7 +152,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           className="w-full py-4 px-6 bg-gradient-to-r from-[#E52E2E] via-red-600 to-[#D92626] hover:from-red-500 hover:to-rose-500 text-white font-black rounded-2xl shadow-[0_0_25px_rgba(229,46,46,0.4)] transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3 text-base uppercase tracking-wider border border-red-400/40"
         >
           <Rocket className="w-5 h-5 text-white fill-current" />
-          <span>CREAR MISIÓN (HOST)</span>
+          <span>CREAR MISIÓN</span>
         </button>
 
         {/* Join Code Window */}
@@ -213,7 +213,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           onClick={onOpenRules}
           className="text-xs font-bold text-slate-400 hover:text-[#00F0FF] underline underline-offset-4 transition-colors"
         >
-          ¿Cómo se juega a RetroReto Infiltrados en el Tiempo? Ver Reglas
+          ¿Cómo se juega a RetroReto Infiltrados en el Tiempo?
         </button>
       </div>
     </div>
