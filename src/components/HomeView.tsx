@@ -86,7 +86,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {/* Logo grande */}
             <div className="py-2 flex justify-center">
               <img
-                src="/logo-infiltrados-white.png"
+                src={`${import.meta.env.BASE_URL}logo-infiltrados-white.png`}
                 alt="RetroReto: Infiltrados en el tiempo"
                 className="w-full max-w-xs sm:max-w-sm h-auto object-contain drop-shadow-[0_0_15px_rgba(0,240,255,0.4)]"
                 referrerPolicy="no-referrer"
