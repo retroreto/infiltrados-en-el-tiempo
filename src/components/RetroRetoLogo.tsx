@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import logoImg from '../assets/logo-infiltrados-white-small.webp';
+import logoImg from '../assets/logo-infiltrados-white-small.png';
 
 interface RetroRetoLogoProps {
   className?: string;

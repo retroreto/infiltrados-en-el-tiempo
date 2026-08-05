@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Rocket, Users, Smartphone, Sparkles, Play, ShieldAlert, ArrowRight, Radio, Shield, Terminal } from 'lucide-react';
 import { AvatarPicker } from './AvatarPicker';
-import { RetroRetoLogo } from './RetroRetoLogo';
 import { soundEngine } from '../utils/AudioService';
-import agentHeroImg from '../assets/images/retroreto_agent_1785541053831.jpg';
+import mainLogo from '../assets/logo-infiltrados-white.png';
 
 interface HomeViewProps {
   playerName: string;
@@ -81,49 +80,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
               <div className="flex items-center gap-2 text-[10px] font-mono font-bold text-[#00F0FF] uppercase tracking-widest bg-[#0B0E17] px-2.5 py-1 rounded-full border border-[#00F0FF]/30">
                 <Terminal className="w-3 h-3" />
-                <span>RETRORETO OS v2.5</span>
+                <span>RETRORETO PRESENTA</span>
               </div>
             </div>
 
-            {/* Logo Component */}
-            <RetroRetoLogo size="xl" showSubtitle={true} />
-
-            <p className="text-xs text-slate-300 max-w-sm mx-auto mt-3 leading-relaxed">
-              El juego de mesa interactivo de deducción temporal. ¿Descubrirás al Infiltrado o pasarás desapercibido?
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Official Hero Character Banner Card */}
-      <div className="relative bg-[#121622]/90 border border-red-500/40 rounded-3xl overflow-hidden backdrop-blur-xl shadow-[0_0_25px_rgba(229,46,46,0.2)]">
-        <div className="p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4">
-          {/* Hero Character Image */}
-          <div className="relative shrink-0 w-32 h-32 sm:w-36 sm:h-36 rounded-2xl overflow-hidden border-2 border-red-500 shadow-[0_0_20px_rgba(229,46,46,0.4)] group">
-            <img
-              src={agentHeroImg}
-              alt="Agente Infiltrado en el Tiempo"
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/60 to-transparent py-1 text-center">
-              <span className="text-[9px] font-black uppercase tracking-widest text-[#00F0FF]">
-                AGENTE OFICIAL
-              </span>
+            {/* Logo grande */}
+            <div className="py-2 flex justify-center">
+              <img
+                src={mainLogo}
+                alt="RetroReto: Infiltrados en el tiempo"
+                className="w-full max-w-xs sm:max-w-sm h-auto object-contain drop-shadow-[0_0_15px_rgba(0,240,255,0.4)]"
+                referrerPolicy="no-referrer"
+              />
             </div>
-          </div>
 
-          {/* Hero Character Description */}
-          <div className="space-y-2 text-center sm:text-left flex-1">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-950/80 border border-red-500/50 text-red-300 text-[10px] font-black tracking-wider uppercase">
-              <Radio className="w-3 h-3 text-red-400 animate-pulse" />
-              <span>ALERTA TEMPORAL</span>
-            </div>
-            <h2 className="text-base font-black text-white leading-tight uppercase">
-              ¿LISTO PARA TU PRÓXIMA MISIÓN?
-            </h2>
-            <p className="text-xs text-slate-300 leading-normal">
-              Configura tu agente, selecciona tu traje de viaje y entra a la sala de control.
+            <p className="text-xs sm:text-sm text-slate-300 max-w-sm mx-auto mt-2 leading-relaxed font-medium">
+              Un viaje temporal y un infiltrado oculto. ¡Descúbrelo!
             </p>
           </div>
         </div>
