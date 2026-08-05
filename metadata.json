@@ -1,0 +1,6 @@
+{
+  "name": "RetroReto infiltrados en el tiempo",
+  "description": "Party game de deducción social oficial de RetroReto. Viaja por distintas épocas históricas, descubre al Infiltrado o disimula para pasar desapercibido.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
