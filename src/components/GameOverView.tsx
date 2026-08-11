@@ -65,16 +65,52 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
             <div className="text-xs font-bold uppercase tracking-widest text-slate-300">
               VICTORIA DE LA MISIÓN
             </div>
-            <div className={`text-3xl font-black uppercase tracking-tight ${
-              isViajerosWin ? 'text-[#00F0FF]' : 'text-red-400'
+            <div className={`text-3xl sm:text-4xl font-black uppercase tracking-tight my-1 ${
+              isViajerosWin ? 'text-[#00F0FF] drop-shadow-[0_0_15px_rgba(0,240,255,0.6)]' : 'text-red-400 drop-shadow-[0_0_15px_rgba(229,46,46,0.6)]'
             }`}>
               {isViajerosWin ? '¡GANAN LOS VIAJEROS!' : '¡GANAN LOS INFILTRADOS!'}
             </div>
           </div>
 
+          {/* Winning Players Spotlight Roster */}
+          <div className="pt-2 border-t border-[#2B354C]/60 space-y-2">
+            <div className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center justify-center gap-1.5">
+              <Trophy className="w-4 h-4 text-amber-400" />
+              <span>AGENTES GANADORES DE LA RONDA</span>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-2">
+              {room.players
+                .filter(p => isViajerosWin ? p.role === 'VIAJERO' : p.role === 'INFILTRADO')
+                .map(p => {
+                  const IconComp = AVATAR_ICONS[p.avatarIconIndex || 0] || Trophy;
+
+                  return (
+                    <div
+                      key={p.id}
+                      className="px-3 py-1.5 bg-[#0B0E17] border border-amber-400/50 rounded-xl flex items-center gap-2 shadow-[0_0_10px_rgba(251,191,36,0.2)]"
+                    >
+                      <div
+                        className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                        style={{
+                          backgroundColor: `${p.avatarColor}30`,
+                          borderColor: p.avatarColor,
+                          borderWidth: '1px'
+                        }}
+                      >
+                        <IconComp className="w-3.5 h-3.5" style={{ color: p.avatarColor }} />
+                      </div>
+                      <span className="font-extrabold text-xs text-white">{p.name}</span>
+                      <span className="text-[10px] text-amber-400 font-bold">+100 pts</span>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+
           {room.infiltratorGuessedCorrectly && (
-            <div className="py-1.5 px-3 bg.red-950/90 border border-[#E52E2E] rounded-full text-[11px] text-red-200 font-bold inline-block">
-              ¡El Infiltrado adivinó el hito y robó la victoria!
+            <div className="py-1.5 px-3 bg-red-950/90 border border-[#E52E2E] rounded-full text-[11px] text-red-200 font-bold inline-block mt-2">
+              ¡El Infiltrado adivinó el hito secreto y robó la victoria!
             </div>
           )}
         </div>

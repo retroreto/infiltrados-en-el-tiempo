@@ -152,6 +152,18 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       )}
 
+      {/* Highlighted Guest Room Invite Banner if initialRoomCode present */}
+      {initialRoomCode && (
+        <div className="bg-[#121622] border-2 border-[#00F0FF] rounded-2xl p-4 text-center shadow-[0_0_20px_rgba(0,240,255,0.3)] animate-pulse space-y-2">
+          <div className="text-xs font-mono font-bold text-[#00F0FF]">
+            🚀 HAS SIDO INVITADO A LA MISIÓN: <span className="text-white bg-[#0B0E17] px-2 py-0.5 rounded border border-[#00F0FF]/40">{initialRoomCode}</span>
+          </div>
+          <p className="text-[11px] text-slate-300">
+            Ingresa tu nombre arriba y presiona para unirte como agente activo.
+          </p>
+        </div>
+      )}
+
       {/* Main Action Windows: Host Mission vs Join Code */}
       <div className="space-y-3">
         {/* Create Mission (Host) Button */}

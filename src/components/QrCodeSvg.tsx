@@ -58,24 +58,20 @@ export const QrCodeSvg: React.FC<QrCodeProps> = ({ value, size = 160 }) => {
   }
 
   return (
-    <div className="p-3 bg-slate-950 border border-cyan-500/40 rounded-xl shadow-[0_0_20px_rgba(0,240,255,0.2)] inline-block">
+    <div className="p-2.5 bg-[#0B0E17] border border-[#00F0FF]/50 rounded-xl shadow-[0_0_15px_rgba(0,240,255,0.2)] inline-block">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <rect width={size} height={size} fill="#0B0F19" rx={8} />
+        <rect width={size} height={size} fill="#0B0E17" rx={6} />
         {grid.map((row, r) =>
           row.map((cell, c) =>
             cell ? (
               <rect
                 key={`${r}-${c}`}
-                x={c * cellSize + 1}
-                y={r * cellSize + 1}
-                width={cellSize - 1.5}
-                height={cellSize - 1.5}
-                rx={2}
-                fill={
-                  (r < 5 && c < 5) || (r < 5 && c >= gridSize - 5) || (r >= gridSize - 5 && c < 5)
-                    ? "#00F0FF"
-                    : "#38BDF8"
-                }
+                x={c * cellSize + 0.8}
+                y={r * cellSize + 0.8}
+                width={cellSize - 1.2}
+                height={cellSize - 1.2}
+                rx={1.5}
+                fill="#00F0FF"
               />
             ) : null
           )
@@ -86,4 +82,5 @@ export const QrCodeSvg: React.FC<QrCodeProps> = ({ value, size = 160 }) => {
 };
 
 export default QrCodeSvg;
+
 

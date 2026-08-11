@@ -18,9 +18,16 @@ export const DiscussionView: React.FC<DiscussionViewProps> = ({
 }) => {
   const [seconds, setSeconds] = useState(room.timerRemaining);
   const [turnIndex, setTurnIndex] = useState(0);
+  const [showMyClue, setShowMyClue] = useState(false);
+
+  const isOnline = room.mode === 'online';
+  const me = room.players.find(p => p.id === currentPlayerId);
+  const isViajero = me?.role === 'VIAJERO';
+  const isInfiltrado = me?.role === 'INFILTRADO';
 
   const activePlayers = room.players.filter(p => !p.isExiled);
   const currentTurnPlayer = activePlayers[turnIndex % activePlayers.length];
+
 
   useEffect(() => {
     if (room.settings.timerSeconds === 0) return; // Infinite time
@@ -165,6 +172,55 @@ export const DiscussionView: React.FC<DiscussionViewProps> = ({
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Confidential Clue Viewer (Online Individual View) */}
+      {isOnline && me && (
+        <div className="bg-[#121622]/90 border border-[#00F0FF]/40 rounded-2xl p-3.5 backdrop-blur-xl space-y-2 shadow-md">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#00F0FF]">
+              <Sparkles className="w-4 h-4 text-[#00F0FF]" />
+              <span>TU EXPEDIENTE SECRETO</span>
+            </div>
+            <button
+              onClick={() => {
+                soundEngine.playClick();
+                setShowMyClue(!showMyClue);
+              }}
+              className="px-2.5 py-1 bg-[#1B2234] hover:bg-[#252E46] border border-[#00F0FF]/40 text-[#00F0FF] rounded-xl text-[10px] font-black uppercase transition-all"
+            >
+              {showMyClue ? 'OCULTAR PISTA' : 'VER MI PISTA Y ROL'}
+            </button>
+          </div>
+
+          {showMyClue && room.currentHito && (
+            <div className="pt-2 border-t border-[#2B354C] animate-fade-in space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 font-bold uppercase text-[10px]">Tu Rol:</span>
+                <span className={`font-black uppercase ${isInfiltrado ? 'text-[#E52E2E]' : 'text-[#00F0FF]'}`}>
+                  {isInfiltrado ? 'INFILTRADO' : 'VIAJERO DEL TIEMPO'}
+                </span>
+              </div>
+
+              {isViajero ? (
+                <div className="p-3 bg-[#0B0E17] rounded-xl border border-[#2B354C] space-y-1">
+                  <div className="text-[10px] font-bold text-[#00F0FF]">
+                    HITO: "{room.currentHito.hito}"
+                  </div>
+                  <p className="text-[#00F0FF] font-medium text-[11px]">
+                    <strong className="text-white">Pista:</strong> {room.currentHito.pista}
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 bg-red-950/40 rounded-xl border border-red-500/40 text-red-200">
+                  <p className="font-bold text-[11px]">
+                    No conoces el Hito. Escucha atentamente las pistas y disimula.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
