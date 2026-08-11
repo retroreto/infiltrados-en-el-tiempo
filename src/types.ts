@@ -26,6 +26,8 @@ export interface Player {
   hasVoted?: boolean;
   votedForId?: string | null;
   revealedRole?: boolean;
+  isMuted?: boolean;
+  isCameraOff?: boolean;
 }
 
 export interface RoomSettings {

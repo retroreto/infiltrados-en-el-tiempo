@@ -8,6 +8,7 @@ import { VotingView } from './components/VotingView';
 import { EjectionView } from './components/EjectionView';
 import { GameOverView } from './components/GameOverView';
 import { RulesModal } from './components/RulesModal';
+import { MediaRoomManager, WebRTCSignalData } from './components/MediaRoomManager';
 import { GameRoom, Player, RoomSettings, GamePhase, GameMode } from './types';
 import { getRandomHito, HitoHistorico } from './data/hitos';
 import { soundEngine } from './utils/AudioService';
@@ -28,6 +29,7 @@ export default function App() {
   // Active game room state
   const [room, setRoom] = useState<GameRoom | null>(null);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
+  const [incomingSignal, setIncomingSignal] = useState<WebRTCSignalData | null>(null);
 
   // Save profile changes to local storage
   useEffect(() => {
@@ -57,8 +59,12 @@ export default function App() {
 
     eventSource.onmessage = (event) => {
       try {
-        const updatedRoom: GameRoom = JSON.parse(event.data);
-        setRoom(updatedRoom);
+        const payload = JSON.parse(event.data);
+        if (payload && payload.type === 'webrtc_signal') {
+          setIncomingSignal(payload as WebRTCSignalData);
+        } else if (payload && payload.roomCode) {
+          setRoom(payload as GameRoom);
+        }
       } catch (err) {
         console.error("SSE parse error", err);
       }
@@ -420,6 +426,15 @@ export default function App() {
       />
 
       <main className="flex-1 z-10 pt-4">
+        {room && (
+          <MediaRoomManager
+            room={room}
+            currentPlayerId={myPlayerId}
+            incomingSignal={incomingSignal}
+            onClearSignal={() => setIncomingSignal(null)}
+          />
+        )}
+
         {!room ? (
           <HomeView
             playerName={playerName}

@@ -155,6 +155,46 @@ app.get("/api/rooms/:code/stream", (req: Request, res: Response) => {
   });
 });
 
+// WebRTC Signaling relay endpoint
+app.post("/api/rooms/:code/signal", (req: Request, res: Response) => {
+  const code = req.params.code.toUpperCase();
+  const { fromPlayerId, targetPlayerId, signal } = req.body;
+
+  const clients = roomSseClients.get(code);
+  if (clients) {
+    const message = JSON.stringify({
+      type: "webrtc_signal",
+      fromPlayerId,
+      targetPlayerId,
+      signal
+    });
+    clients.forEach(clientRes => {
+      try {
+        clientRes.write(`data: ${message}\n\n`);
+      } catch (err) {
+        // client disconnected
+      }
+    });
+  }
+  res.json({ success: true });
+});
+
+// Player Media Status update endpoint (mute / camera toggle sync)
+app.post("/api/rooms/:code/media-status", (req: Request, res: Response) => {
+  const code = req.params.code.toUpperCase();
+  const { playerId, isMuted, isCameraOff } = req.body;
+  const room = rooms.get(code);
+  if (room) {
+    const player = room.players.find(p => p.id === playerId);
+    if (player) {
+      if (typeof isMuted === "boolean") player.isMuted = isMuted;
+      if (typeof isCameraOff === "boolean") player.isCameraOff = isCameraOff;
+      broadcastRoomUpdate(code);
+    }
+  }
+  res.json({ success: true });
+});
+
 app.post("/api/rooms/:code/settings", (req: Request, res: Response) => {
   const code = req.params.code.toUpperCase();
   const { playerId, settings } = req.body;
