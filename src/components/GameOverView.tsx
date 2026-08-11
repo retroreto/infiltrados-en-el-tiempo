@@ -19,6 +19,13 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
   const isViajerosWin = room.winnerTeam === 'VIAJEROS';
   const currentHito = room.currentHito;
 
+  const infiltratorsCount = room.players.filter(p => p.role === 'INFILTRADO').length || room.settings?.infiltratorCount || 1;
+
+  let victoryText = '¡GANAN LOS VIAJEROS!';
+  if (!isViajerosWin) {
+    victoryText = infiltratorsCount > 1 ? '¡LOS INFILTRADOS GANAN!' : '¡EL INFILTRADO HA GANADO!';
+  }
+
   const handleNextRound = () => {
     soundEngine.playClick();
     onNextRound();
@@ -68,7 +75,7 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
             <div className={`text-3xl sm:text-4xl font-black uppercase tracking-tight my-1 ${
               isViajerosWin ? 'text-[#00F0FF] drop-shadow-[0_0_15px_rgba(0,240,255,0.6)]' : 'text-red-400 drop-shadow-[0_0_15px_rgba(229,46,46,0.6)]'
             }`}>
-              {isViajerosWin ? '¡GANAN LOS VIAJEROS!' : '¡GANAN LOS INFILTRADOS!'}
+              {victoryText}
             </div>
           </div>
 
@@ -110,7 +117,9 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
 
           {room.infiltratorGuessedCorrectly && (
             <div className="py-1.5 px-3 bg-red-950/90 border border-[#E52E2E] rounded-full text-[11px] text-red-200 font-bold inline-block mt-2">
-              ¡El Infiltrado adivinó el hito secreto y robó la victoria!
+              {infiltratorsCount > 1
+                ? '¡Los Infiltrados adivinaron el hito secreto y robaron la victoria!'
+                : '¡El Infiltrado adivinó el hito secreto y robó la victoria!'}
             </div>
           )}
         </div>
