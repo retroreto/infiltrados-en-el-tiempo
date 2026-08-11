@@ -7,6 +7,7 @@ interface HomeViewProps {
   playerName: string;
   avatarColor: string;
   avatarIconIndex: number;
+  initialRoomCode?: string;
   onChangeName: (name: string) => void;
   onChangeAvatarColor: (color: string) => void;
   onChangeAvatarIcon: (index: number) => void;
@@ -20,6 +21,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   playerName,
   avatarColor,
   avatarIconIndex,
+  initialRoomCode = '',
   onChangeName,
   onChangeAvatarColor,
   onChangeAvatarIcon,
@@ -28,8 +30,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onStartPassAndPlay,
   onOpenRules
 }) => {
-  const [inputCode, setInputCode] = useState('');
+  const [inputCode, setInputCode] = useState(initialRoomCode);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Update input code if initialRoomCode changes from URL
+  React.useEffect(() => {
+    if (initialRoomCode) {
+      setInputCode(initialRoomCode.toUpperCase());
+    }
+  }, [initialRoomCode]);
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();

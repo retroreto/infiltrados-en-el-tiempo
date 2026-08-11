@@ -35,22 +35,23 @@ export interface WebRTCSignalData {
 interface MediaRoomManagerProps {
   room: GameRoom;
   currentPlayerId: string;
-  incomingSignal?: WebRTCSignalData | null;
-  onClearSignal?: () => void;
+  incomingSignals?: WebRTCSignalData[];
+  onClearSignals?: () => void;
 }
 
 const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' }
   ]
 };
 
 export const MediaRoomManager: React.FC<MediaRoomManagerProps> = ({
   room,
   currentPlayerId,
-  incomingSignal,
-  onClearSignal
+  incomingSignals = [],
+  onClearSignals
 }) => {
   // Local Media State
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -59,17 +60,16 @@ export const MediaRoomManager: React.FC<MediaRoomManagerProps> = ({
   const [isDeafened, setIsDeafened] = useState(false);
   const [permissionError, setPermissionError] = useState<string | null>(null);
   const [isDockExpanded, setIsDockExpanded] = useState(true);
-  const [isFloating, setIsFloating] = useState(false);
 
   // Peer Streams State: peerId -> MediaStream
   const [remoteStreams, setRemoteStreams] = useState<Record<string, MediaStream>>({});
 
   // WebRTC Peer Connections ref: peerId -> RTCPeerConnection
   const peerConnections = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const iceCandidatesBuffer = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
   const localStreamRef = useRef<MediaStream | null>(null);
 
   const isOnline = room.mode === 'online';
-  const me = room.players.find(p => p.id === currentPlayerId);
 
   // --- 1. INITIALIZE LOCAL MEDIA STREAM ---
   const startLocalMedia = async () => {
@@ -94,8 +94,11 @@ export const MediaRoomManager: React.FC<MediaRoomManagerProps> = ({
       // Update tracks enabled according to current state
       stream.getAudioTracks().forEach(t => (t.enabled = !isMicMuted));
       stream.getVideoTracks().forEach(t => (t.enabled = !isCameraOff));
+
+      // Attach local tracks to any existing peer connections
+      attachTracksToAllPeers(stream);
     } catch (err: any) {
-      console.warn("Camera/Mic initial access error, falling back to audio-only if possible:", err);
+      console.warn("Camera/Mic initial access error, trying audio-only:", err);
       try {
         const audioOnlyStream = await navigator.mediaDevices.getUserMedia({
           audio: true,
@@ -105,24 +108,35 @@ export const MediaRoomManager: React.FC<MediaRoomManagerProps> = ({
         localStreamRef.current = audioOnlyStream;
         setIsCameraOff(true);
         audioOnlyStream.getAudioTracks().forEach(t => (t.enabled = !isMicMuted));
+        attachTracksToAllPeers(audioOnlyStream);
       } catch (audioErr: any) {
-        console.error("Audio access also denied:", audioErr);
-        setPermissionError("Permiso de micrófono/cámara no concedido.");
+        console.error("Audio access denied:", audioErr);
+        setPermissionError("Permiso de micrófono/cámara denegado.");
       }
     }
+  };
+
+  const attachTracksToAllPeers = (stream: MediaStream) => {
+    peerConnections.current.forEach(pc => {
+      const senders = pc.getSenders();
+      stream.getTracks().forEach(track => {
+        if (!senders.some(s => s.track === track)) {
+          pc.addTrack(track, stream);
+        }
+      });
+    });
   };
 
   useEffect(() => {
     startLocalMedia();
 
     return () => {
-      // Cleanup tracks on unmount
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(t => t.stop());
       }
-      // Close all peer connections
       peerConnections.current.forEach(pc => pc.close());
       peerConnections.current.clear();
+      iceCandidatesBuffer.current.clear();
     };
   }, []);
 
@@ -163,7 +177,7 @@ export const MediaRoomManager: React.FC<MediaRoomManagerProps> = ({
     };
 
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+      if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
         setRemoteStreams(prev => {
           const next = { ...prev };
           delete next[peerId];
@@ -192,7 +206,6 @@ export const MediaRoomManager: React.FC<MediaRoomManagerProps> = ({
     }
   };
 
-  // Sync player media status (Muted/CameraOff) to server
   const syncMediaStatus = async (muted: boolean, cameraOff: boolean) => {
     if (!isOnline) return;
     try {
@@ -206,70 +219,111 @@ export const MediaRoomManager: React.FC<MediaRoomManagerProps> = ({
         })
       });
     } catch (err) {
-      // silent catch
+      // silent
     }
   };
 
-  // --- 3. HANDLE INCOMING WEBRTC SIGNALS ---
+  const flushIceCandidates = async (peerId: string, pc: RTCPeerConnection) => {
+    const buf = iceCandidatesBuffer.current.get(peerId) || [];
+    for (const cand of buf) {
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(cand));
+      } catch (e) {
+        console.warn("Error adding buffered candidate:", e);
+      }
+    }
+    iceCandidatesBuffer.current.delete(peerId);
+  };
+
+  // --- 3. PROCESS INCOMING SIGNALS QUEUE ---
   useEffect(() => {
-    if (!incomingSignal) return;
+    if (!incomingSignals || incomingSignals.length === 0) return;
 
-    const { fromPlayerId, targetPlayerId, signal } = incomingSignal;
-    if (targetPlayerId !== currentPlayerId) return;
+    const queue = [...incomingSignals];
+    if (onClearSignals) onClearSignals();
 
-    const handleSignal = async () => {
-      const pc = createPeerConnection(fromPlayerId);
+    const processQueue = async () => {
+      for (const sig of queue) {
+        if (sig.targetPlayerId !== currentPlayerId) continue;
+        const { fromPlayerId, signal } = sig;
+        const pc = createPeerConnection(fromPlayerId);
 
-      if (signal.type === 'offer' && signal.sdp) {
-        await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        sendSignal(fromPlayerId, {
-          type: 'answer',
-          sdp: answer
-        });
-      } else if (signal.type === 'answer' && signal.sdp) {
-        if (pc.signalingState !== 'stable') {
-          await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
-        }
-      } else if (signal.type === 'candidate' && signal.candidate) {
-        try {
-          await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
-        } catch (err) {
-          console.warn("Error adding ICE candidate:", err);
+        if (signal.type === 'offer' && signal.sdp) {
+          try {
+            await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+            await flushIceCandidates(fromPlayerId, pc);
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            sendSignal(fromPlayerId, { type: 'answer', sdp: answer });
+          } catch (e) {
+            console.error("Error handling offer:", e);
+          }
+        } else if (signal.type === 'answer' && signal.sdp) {
+          try {
+            if (pc.signalingState !== 'stable') {
+              await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+              await flushIceCandidates(fromPlayerId, pc);
+            }
+          } catch (e) {
+            console.error("Error handling answer:", e);
+          }
+        } else if (signal.type === 'candidate' && signal.candidate) {
+          try {
+            if (pc.remoteDescription && pc.remoteDescription.type) {
+              await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+            } else {
+              const buf = iceCandidatesBuffer.current.get(fromPlayerId) || [];
+              buf.push(signal.candidate);
+              iceCandidatesBuffer.current.set(fromPlayerId, buf);
+            }
+          } catch (e) {
+            console.warn("Error candidate:", e);
+          }
         }
       }
     };
 
-    handleSignal();
-    if (onClearSignal) onClearSignal();
-  }, [incomingSignal, currentPlayerId]);
+    processQueue();
+  }, [incomingSignals, currentPlayerId]);
 
-  // --- 4. INITIATE OFFERS TO PEERS ---
-  useEffect(() => {
-    if (!isOnline || !localStream) return;
+  // --- 4. INITIATE OFFERS TO OTHER PLAYERS ---
+  const initiatePeerOffers = () => {
+    if (!isOnline) return;
 
     const otherPlayers = room.players.filter(p => p.id !== currentPlayerId);
 
     otherPlayers.forEach(async (peer) => {
-      // Deterministic initiator logic (Lexicographical ID comparison to prevent duplicate offers)
+      // Deterministic order: lower lexicographical ID initiates offer
       if (currentPlayerId < peer.id) {
         const pc = createPeerConnection(peer.id);
-        if (pc.signalingState === 'stable' && pc.iceConnectionState === 'new') {
-          try {
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            sendSignal(peer.id, {
-              type: 'offer',
-              sdp: offer
-            });
-          } catch (err) {
-            console.error("Error creating offer:", err);
-          }
+        try {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          sendSignal(peer.id, {
+            type: 'offer',
+            sdp: offer
+          });
+        } catch (err) {
+          console.error("Error initiating offer:", err);
         }
       }
     });
+  };
+
+  useEffect(() => {
+    initiatePeerOffers();
   }, [room.players.length, isOnline, !!localStream]);
+
+  // Reset and Reconnect WebRTC connections manually
+  const handleReconnect = () => {
+    soundEngine.playClick();
+    peerConnections.current.forEach(pc => pc.close());
+    peerConnections.current.clear();
+    iceCandidatesBuffer.current.clear();
+    setRemoteStreams({});
+    initiatePeerOffers();
+  };
 
   // --- 5. CONTROL TOGGLES ---
   const toggleMic = () => {
@@ -299,109 +353,91 @@ export const MediaRoomManager: React.FC<MediaRoomManagerProps> = ({
     setIsDeafened(prev => !prev);
   };
 
-  // If local stream is empty or permission denied, show retry button
-  const handleRetryPermissions = () => {
-    soundEngine.playClick();
-    startLocalMedia();
-  };
-
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 mb-4 z-20">
-      {/* Retro Cybernetic Media Control Box */}
-      <div className="bg-[#121622]/95 border border-[#00F0FF]/30 rounded-3xl p-3 sm:p-4 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.7)] transition-all">
+    <div className="w-full max-w-lg md:max-w-4xl mx-auto px-4 mb-4 z-20">
+      {/* Cybernetic Media Box */}
+      <div className="bg-[#121622]/95 border border-[#00F0FF]/30 rounded-3xl p-3 sm:p-4 backdrop-blur-xl shadow-xl transition-all">
         {/* Header Bar */}
-        <div className="flex items-center justify-between pb-2 mb-3 border-b border-[#2B354C]">
+        <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#2B354C]">
           <div className="flex items-center gap-2">
-            <Radio className="w-4 h-4 text-[#00F0FF] animate-pulse" />
-            <span className="text-xs font-mono font-black text-[#00F0FF] tracking-wider uppercase">
-              FRECUENCIA DE AUDIO & CÁMARA {isOnline ? 'EN VIVO' : '(SIMULADOR)'}
+            <Radio className="w-3.5 h-3.5 text-[#00F0FF] animate-pulse" />
+            <span className="text-[11px] font-mono font-black text-[#00F0FF] tracking-wider uppercase">
+              AUDIO & CÁMARAS P2P
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
+              onClick={handleReconnect}
+              className="px-2 py-1 rounded-lg bg-[#1B2234] hover:bg-[#252E46] text-[#00F0FF] text-[10px] font-bold flex items-center gap-1 border border-[#00F0FF]/30"
+              title="Reiniciar conexiones de video"
+            >
+              <RefreshCw className="w-3 h-3" />
+              <span className="hidden sm:inline">RECONECTAR</span>
+            </button>
+
+            <button
               onClick={() => setIsDockExpanded(prev => !prev)}
-              className="p-1.5 rounded-lg bg-[#1B2234] hover:bg-[#252E46] text-slate-300 transition-colors flex items-center gap-1 text-[11px] font-bold"
-              title={isDockExpanded ? "Plegar cámaras" : "Desplegar cámaras"}
+              className="p-1 rounded-lg bg-[#1B2234] hover:bg-[#252E46] text-slate-300 transition-colors flex items-center gap-1 text-[10px] font-bold"
             >
               <Users className="w-3.5 h-3.5 text-[#00F0FF]" />
-              <span className="hidden sm:inline">{room.players.length} TRIPULANTES</span>
-              {isDockExpanded ? <ChevronUp className="w-4 h-4 text-[#00F0FF]" /> : <ChevronDown className="w-4 h-4 text-[#00F0FF]" />}
+              <span>{room.players.length}</span>
+              {isDockExpanded ? <ChevronUp className="w-3.5 h-3.5 text-[#00F0FF]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#00F0FF]" />}
             </button>
           </div>
         </div>
 
         {/* Media Controls Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 bg-[#0B0E17] p-2.5 rounded-2xl border border-[#2B354C]">
+        <div className="flex flex-wrap items-center justify-between gap-2 bg-[#0B0E17] p-2 rounded-2xl border border-[#2B354C]">
           {/* Audio & Video Buttons */}
-          <div className="flex items-center gap-2">
-            {/* Mic Toggle Button */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Mic Toggle */}
             <button
               onClick={toggleMic}
-              className={`py-2 px-3.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-md ${
+              className={`py-1.5 px-3 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm ${
                 isMicMuted
-                  ? 'bg-red-500/20 border border-red-500/50 text-red-400 hover:bg-red-500/30'
-                  : 'bg-[#00F0FF]/20 border border-[#00F0FF]/60 text-[#00F0FF] hover:bg-[#00F0FF]/30 shadow-[0_0_12px_rgba(0,240,255,0.3)]'
+                  ? 'bg-red-500/20 border border-red-500/50 text-red-400'
+                  : 'bg-[#00F0FF]/20 border border-[#00F0FF]/60 text-[#00F0FF] shadow-[0_0_10px_rgba(0,240,255,0.2)]'
               }`}
             >
-              {isMicMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 animate-pulse" />}
-              <span>{isMicMuted ? 'MIC MUTE' : 'MIC ACTIVO'}</span>
+              {isMicMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 animate-pulse" />}
+              <span>{isMicMuted ? 'MIC MUTE' : 'MIC ON'}</span>
             </button>
 
-            {/* Camera Toggle Button */}
+            {/* Camera Toggle */}
             <button
               onClick={toggleCamera}
-              className={`py-2 px-3.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-md ${
+              className={`py-1.5 px-3 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm ${
                 isCameraOff
-                  ? 'bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700'
-                  : 'bg-emerald-500/20 border border-emerald-500/60 text-emerald-400 hover:bg-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                  ? 'bg-slate-800 border border-slate-700 text-slate-400'
+                  : 'bg-emerald-500/20 border border-emerald-500/60 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
               }`}
             >
-              {isCameraOff ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
-              <span>{isCameraOff ? 'CÁMARA OFF' : 'CÁMARA ON'}</span>
+              {isCameraOff ? <VideoOff className="w-3.5 h-3.5" /> : <Video className="w-3.5 h-3.5" />}
+              <span>{isCameraOff ? 'CAM OFF' : 'CAM ON'}</span>
             </button>
 
             {/* Deafen Toggle */}
             <button
               onClick={toggleDeafen}
-              className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all ${
+              className={`py-1.5 px-2.5 rounded-xl font-bold text-xs flex items-center gap-1 transition-all ${
                 isDeafened
                   ? 'bg-amber-500/20 border border-amber-500/50 text-amber-400'
-                  : 'bg-[#1B2234] border border-[#2B354C] text-slate-300 hover:bg-[#252E46]'
+                  : 'bg-[#1B2234] border border-[#2B354C] text-slate-300'
               }`}
-              title={isDeafened ? "Activar audio de otros" : "Silenciar audio general"}
             >
-              {isDeafened ? <VolumeX className="w-4 h-4 text-amber-400" /> : <Volume2 className="w-4 h-4 text-slate-300" />}
-              <span className="hidden md:inline">{isDeafened ? 'AUDÍFONOS MUTE' : 'AUDIO OK'}</span>
+              {isDeafened ? <VolumeX className="w-3.5 h-3.5 text-amber-400" /> : <Volume2 className="w-3.5 h-3.5 text-slate-300" />}
             </button>
           </div>
 
-          {/* Status & Retry */}
-          <div className="flex items-center gap-2 text-[11px] font-mono text-slate-400">
-            {permissionError && (
-              <div className="flex items-center gap-1.5 text-amber-400 font-sans">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span className="truncate max-w-[150px] sm:max-w-none">{permissionError}</span>
-                <button
-                  onClick={handleRetryPermissions}
-                  className="p-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 underline"
-                  title="Reintentar acceso"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-            {!permissionError && (
-              <span className="text-[#00F0FF] font-bold">
-                ● WEBRTC RED {isOnline ? 'ONLINE' : 'LOCAL'}
-              </span>
-            )}
+          <div className="text-[10px] font-mono text-[#00F0FF] font-bold">
+            ● RED P2P ACTIVA
           </div>
         </div>
 
         {/* Expanded Video Grid View */}
         {isDockExpanded && (
-          <div className="mt-3.5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 animate-fade-in">
+          <div className="mt-2.5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 animate-fade-in">
             {room.players.map(player => {
               const isMe = player.id === currentPlayerId;
               const remoteStream = remoteStreams[player.id];
@@ -414,13 +450,13 @@ export const MediaRoomManager: React.FC<MediaRoomManagerProps> = ({
               return (
                 <div
                   key={player.id}
-                  className={`relative aspect-video rounded-2xl overflow-hidden border transition-all flex flex-col justify-between p-2 shadow-lg ${
+                  className={`relative aspect-video rounded-xl overflow-hidden border transition-all flex flex-col justify-between p-1.5 shadow-md ${
                     isMe
-                      ? 'bg-[#182032] border-[#00F0FF]/60 shadow-[0_0_15px_rgba(0,240,255,0.2)]'
+                      ? 'bg-[#182032] border-[#00F0FF]/60'
                       : 'bg-[#0E1320] border-[#2B354C]'
                   }`}
                 >
-                  {/* Video Element for Me or Remote */}
+                  {/* Video Element */}
                   {isMe ? (
                     !isCameraOff && localStream ? (
                       <LocalVideoView stream={localStream} />
@@ -433,49 +469,46 @@ export const MediaRoomManager: React.FC<MediaRoomManagerProps> = ({
 
                   {/* Fallback View when Camera is OFF */}
                   {((isMe && (isCameraOff || !localStream)) || (!isMe && (playerCameraOff || !remoteStream))) && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#141A29] to-[#0A0D16] p-2">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#141A29] to-[#0A0D16] p-1">
                       <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center border shadow-md transition-transform duration-300 hover:scale-105"
+                        className="w-8 h-8 rounded-full flex items-center justify-center border shadow-sm"
                         style={{
                           backgroundColor: player.avatarColor + '20',
                           borderColor: player.avatarColor
                         }}
                       >
-                        <AvatarIcon className="w-5 h-5" style={{ color: player.avatarColor }} />
+                        <AvatarIcon className="w-4 h-4" style={{ color: player.avatarColor }} />
                       </div>
-                      <span className="text-[10px] font-mono font-bold text-slate-400 mt-1">CÁMARA OFF</span>
                     </div>
                   )}
 
                   {/* Top Bar Badges */}
                   <div className="relative z-10 flex items-center justify-between pointer-events-none">
                     <span
-                      className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider text-slate-950 shadow-md"
+                      className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase tracking-wider text-slate-950 shadow-sm truncate max-w-[80px]"
                       style={{ backgroundColor: player.avatarColor }}
                     >
                       {player.name} {isMe ? '(TÚ)' : ''}
                     </span>
 
                     {player.isHost && (
-                      <span className="bg-amber-400 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-md shadow-sm">
+                      <span className="bg-amber-400 text-slate-950 font-black text-[8px] px-1 rounded shadow-sm">
                         HOST
                       </span>
                     )}
                   </div>
 
-                  {/* Bottom Bar Icons (Mic / Cam indicators) */}
-                  <div className="relative z-10 flex items-center justify-between text-[10px] font-mono text-slate-300 bg-slate-950/70 backdrop-blur-md px-2 py-1 rounded-lg border border-slate-800">
-                    <div className="flex items-center gap-1">
-                      {playerMuted ? (
-                        <span className="flex items-center gap-1 text-red-400 font-bold">
-                          <MicOff className="w-3 h-3 text-red-400" /> SILENCIADO
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-emerald-400 font-bold">
-                          <Mic className="w-3 h-3 text-emerald-400 animate-pulse" /> VOZ ACTIVA
-                        </span>
-                      )}
-                    </div>
+                  {/* Bottom Bar Indicator */}
+                  <div className="relative z-10 flex items-center justify-between text-[9px] font-mono text-slate-300 bg-slate-950/70 px-1.5 py-0.5 rounded border border-slate-800">
+                    {playerMuted ? (
+                      <span className="flex items-center gap-1 text-red-400 font-bold">
+                        <MicOff className="w-2.5 h-2.5" /> MUTE
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-emerald-400 font-bold">
+                        <Mic className="w-2.5 h-2.5 animate-pulse" /> VOZ
+                      </span>
+                    )}
                   </div>
                 </div>
               );

@@ -29,7 +29,8 @@ export default function App() {
   // Active game room state
   const [room, setRoom] = useState<GameRoom | null>(null);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
-  const [incomingSignal, setIncomingSignal] = useState<WebRTCSignalData | null>(null);
+  const [incomingSignals, setIncomingSignals] = useState<WebRTCSignalData[]>([]);
+  const [urlRoomCode, setUrlRoomCode] = useState<string>('');
 
   // Save profile changes to local storage
   useEffect(() => {
@@ -38,14 +39,16 @@ export default function App() {
     localStorage.setItem('infiltrado_avatar_icon', avatarIconIndex.toString());
   }, [playerName, avatarColor, avatarIconIndex]);
 
-  // Check URL query parameters for auto-join room code e.g., ?code=ABCD
+  // Check URL query parameters for direct invitation e.g., ?sala=9CKP or ?code=9CKP
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const codeParam = urlParams.get('code');
-    if (codeParam && !room) {
-      // Auto-join if code is present
+    const codeParam = urlParams.get('sala') || urlParams.get('code');
+    if (codeParam) {
       const code = codeParam.toUpperCase().trim();
-      fetchRoomState(code);
+      setUrlRoomCode(code);
+      if (!room) {
+        fetchRoomState(code);
+      }
     }
   }, []);
 
@@ -61,7 +64,7 @@ export default function App() {
       try {
         const payload = JSON.parse(event.data);
         if (payload && payload.type === 'webrtc_signal') {
-          setIncomingSignal(payload as WebRTCSignalData);
+          setIncomingSignals(prev => [...prev, payload as WebRTCSignalData]);
         } else if (payload && payload.roomCode) {
           setRoom(payload as GameRoom);
         }
@@ -430,8 +433,8 @@ export default function App() {
           <MediaRoomManager
             room={room}
             currentPlayerId={myPlayerId}
-            incomingSignal={incomingSignal}
-            onClearSignal={() => setIncomingSignal(null)}
+            incomingSignals={incomingSignals}
+            onClearSignals={() => setIncomingSignals([])}
           />
         )}
 
@@ -440,6 +443,7 @@ export default function App() {
             playerName={playerName}
             avatarColor={avatarColor}
             avatarIconIndex={avatarIconIndex}
+            initialRoomCode={urlRoomCode}
             onChangeName={setPlayerName}
             onChangeAvatarColor={setAvatarColor}
             onChangeAvatarIcon={setAvatarIconIndex}
