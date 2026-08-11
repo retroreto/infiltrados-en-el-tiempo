@@ -69,7 +69,7 @@ export const DiscussionView: React.FC<DiscussionViewProps> = ({
   const isCritical = seconds > 0 && seconds <= 30;
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-5 pb-10 px-4 animate-fade-in">
+    <div className="w-full max-w-xl mx-auto space-y-5 pb-10 px-4 animate-fade-in">
       {/* Category Banner */}
       {room.currentHito && (
         <div className="p-3.5 bg-[#121622]/90 border border-[#00F0FF]/40 rounded-2xl text-center backdrop-blur-xl flex items-center justify-between shadow-md">

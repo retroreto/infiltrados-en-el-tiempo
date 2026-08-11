@@ -86,12 +86,25 @@ app.post("/api/rooms/create", (req: Request, res: Response) => {
 });
 
 app.post("/api/rooms/join", (req: Request, res: Response) => {
-  const { roomCode, playerName, avatarColor, avatarIconIndex } = req.body;
+  const { roomCode, playerName, avatarColor, avatarIconIndex, existingPlayerId } = req.body;
   const code = (roomCode || "").toUpperCase().trim();
   const room = rooms.get(code);
 
   if (!room) {
     return res.status(404).json({ success: false, message: "Código de Misión no encontrado" });
+  }
+
+  // If player already exists in room by ID or Name, update them instead of cloning!
+  const cleanName = (playerName || "").trim();
+  const existingPlayer = room.players.find(p => p.id === existingPlayerId || (cleanName && p.name.toLowerCase() === cleanName.toLowerCase()));
+
+  if (existingPlayer) {
+    existingPlayer.avatarColor = avatarColor || existingPlayer.avatarColor;
+    existingPlayer.avatarIconIndex = avatarIconIndex ?? existingPlayer.avatarIconIndex;
+    if (cleanName) existingPlayer.name = cleanName;
+    room.updatedAt = Date.now();
+    broadcastRoomUpdate(code);
+    return res.json({ success: true, room, playerId: existingPlayer.id });
   }
 
   if (room.phase !== "lobby" && room.phase !== "home") {
@@ -101,7 +114,7 @@ app.post("/api/rooms/join", (req: Request, res: Response) => {
   const playerId = "p_" + Math.random().toString(36).substring(2, 9);
   const newPlayer: Player = {
     id: playerId,
-    name: playerName || `Agente ${room.players.length + 1}`,
+    name: cleanName || `Agente ${room.players.length + 1}`,
     avatarColor: avatarColor || "#00F0FF",
     avatarIconIndex: avatarIconIndex || 0,
     isHost: false,
@@ -113,6 +126,28 @@ app.post("/api/rooms/join", (req: Request, res: Response) => {
   
   broadcastRoomUpdate(code);
   res.json({ success: true, room, playerId });
+});
+
+app.post("/api/rooms/:code/leave", (req: Request, res: Response) => {
+  const code = (req.params.code || "").toUpperCase().trim();
+  const { playerId } = req.body;
+  const room = rooms.get(code);
+
+  if (room && playerId) {
+    room.players = room.players.filter(p => p.id !== playerId);
+    if (room.players.length === 0) {
+      rooms.delete(code);
+      roomSseClients.delete(code);
+    } else {
+      if (room.hostId === playerId) {
+        room.players[0].isHost = true;
+        room.hostId = room.players[0].id;
+      }
+      room.updatedAt = Date.now();
+      broadcastRoomUpdate(code);
+    }
+  }
+  res.json({ success: true });
 });
 
 app.get("/api/rooms/:code", (req: Request, res: Response) => {
@@ -421,7 +456,12 @@ app.post("/api/rooms/:code/next-round", (req: Request, res: Response) => {
   const { playerId } = req.body;
   const room = rooms.get(code);
 
-  if (!room || room.hostId !== playerId) {
+  if (!room) {
+    return res.status(404).json({ success: false, message: "Misión no encontrada" });
+  }
+
+  const isMember = room.players.some(p => p.id === playerId);
+  if (!isMember && room.hostId !== playerId) {
     return res.status(403).json({ success: false, message: "No autorizado" });
   }
 

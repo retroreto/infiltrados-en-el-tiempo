@@ -25,7 +25,7 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-5 pb-10 px-4 animate-fade-in">
+    <div className="w-full max-w-xl mx-auto space-y-5 pb-10 px-4 animate-fade-in">
       {/* Victory Banner - Windows OS Window Style */}
       <div
         className={`p-6 rounded-3xl border text-center relative overflow-hidden backdrop-blur-xl shadow-2xl ${

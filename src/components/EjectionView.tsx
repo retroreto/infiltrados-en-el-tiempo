@@ -57,7 +57,7 @@ export const EjectionView: React.FC<EjectionViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-6 pb-10 px-4 animate-fade-in text-center">
+    <div className="w-full max-w-xl mx-auto space-y-6 pb-10 px-4 animate-fade-in text-center">
       {/* Space Void Animation Box - Windows UI */}
       <div className="relative w-full h-64 rounded-3xl bg-[#0B0E17] border border-[#2B354C] flex flex-col items-center justify-between p-5 overflow-hidden shadow-2xl">
         {/* Top bar window dots */}

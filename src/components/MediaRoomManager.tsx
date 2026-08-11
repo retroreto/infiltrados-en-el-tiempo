@@ -354,7 +354,7 @@ export const MediaRoomManager: React.FC<MediaRoomManagerProps> = ({
   };
 
   return (
-    <div className="w-full max-w-lg md:max-w-4xl mx-auto px-4 mb-4 z-20">
+    <div className="w-full max-w-xl mx-auto px-4 mb-4 z-20">
       {/* Cybernetic Media Box */}
       <div className="bg-[#121622]/95 border border-[#00F0FF]/30 rounded-3xl p-3 sm:p-4 backdrop-blur-xl shadow-xl transition-all">
         {/* Header Bar */}

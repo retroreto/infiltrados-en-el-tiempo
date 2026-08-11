@@ -58,7 +58,7 @@ export const VotingView: React.FC<VotingViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-5 pb-10 px-4 animate-fade-in">
+    <div className="w-full max-w-xl mx-auto space-y-5 pb-10 px-4 animate-fade-in">
       {/* Header - Windows OS Window Style */}
       <div className="p-5 bg-red-950/90 border border-[#E52E2E] rounded-3xl text-center space-y-2 shadow-[0_0_35px_rgba(229,46,46,0.4)] backdrop-blur-xl">
         <div className="flex items-center justify-between border-b border-red-500/40 pb-2 mb-1">

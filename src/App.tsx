@@ -24,7 +24,9 @@ export default function App() {
   const [avatarIconIndex, setAvatarIconIndex] = useState<number>(() => {
     return parseInt(localStorage.getItem('infiltrado_avatar_icon') || '0', 10);
   });
-  const [myPlayerId, setMyPlayerId] = useState<string>('');
+  const [myPlayerId, setMyPlayerId] = useState<string>(() => {
+    return sessionStorage.getItem('infiltrado_my_player_id') || '';
+  });
 
   // Active game room state
   const [room, setRoom] = useState<GameRoom | null>(null);
@@ -32,12 +34,18 @@ export default function App() {
   const [incomingSignals, setIncomingSignals] = useState<WebRTCSignalData[]>([]);
   const [urlRoomCode, setUrlRoomCode] = useState<string>('');
 
-  // Save profile changes to local storage
+  // Save profile changes to storage
   useEffect(() => {
     if (playerName) localStorage.setItem('infiltrado_player_name', playerName);
     localStorage.setItem('infiltrado_avatar_color', avatarColor);
     localStorage.setItem('infiltrado_avatar_icon', avatarIconIndex.toString());
   }, [playerName, avatarColor, avatarIconIndex]);
+
+  useEffect(() => {
+    if (myPlayerId) {
+      sessionStorage.setItem('infiltrado_my_player_id', myPlayerId);
+    }
+  }, [myPlayerId]);
 
   // Check URL query parameters for direct invitation e.g., ?sala=9CKP or ?code=9CKP
   useEffect(() => {
@@ -46,11 +54,28 @@ export default function App() {
     if (codeParam) {
       const code = codeParam.toUpperCase().trim();
       setUrlRoomCode(code);
-      if (!room) {
-        fetchRoomState(code);
-      }
     }
   }, []);
+
+  // Window unload listener to clean up inactive players
+  useEffect(() => {
+    const handleUnload = () => {
+      if (room && myPlayerId && room.mode === 'online') {
+        try {
+          navigator.sendBeacon(
+            `/api/rooms/${room.roomCode}/leave`,
+            JSON.stringify({ playerId: myPlayerId })
+          );
+        } catch (e) {
+          // ignore
+        }
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+    };
+  }, [room?.roomCode, myPlayerId]);
 
   // Real-time SSE / Sync connection for Online Room
   useEffect(() => {
@@ -127,7 +152,8 @@ export default function App() {
           roomCode: code,
           playerName: playerName || 'Agente Viajero',
           avatarColor,
-          avatarIconIndex
+          avatarIconIndex,
+          existingPlayerId: myPlayerId
         })
       });
       const data = await res.json();
@@ -410,6 +436,20 @@ export default function App() {
 
   const handleExitGame = () => {
     soundEngine.playClick();
+    if (room && myPlayerId && room.mode === 'online') {
+      try {
+        navigator.sendBeacon(
+          `/api/rooms/${room.roomCode}/leave`,
+          JSON.stringify({ playerId: myPlayerId })
+        );
+      } catch (err) {
+        fetch(`/api/rooms/${room.roomCode}/leave`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerId: myPlayerId })
+        }).catch(() => {});
+      }
+    }
     setRoom(null);
   };
 

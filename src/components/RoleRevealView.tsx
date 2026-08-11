@@ -48,7 +48,7 @@ export const RoleRevealView: React.FC<RoleRevealViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-5 pb-10 px-4 animate-fade-in">
+    <div className="w-full max-w-xl mx-auto space-y-5 pb-10 px-4 animate-fade-in">
       {/* Pass & Play Header if applicable */}
       {isPassAndPlay && (
         <div className="p-3.5 bg-[#00F0FF]/10 border border-[#00F0FF]/40 rounded-2xl text-center space-y-1 backdrop-blur-md">

@@ -69,7 +69,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto space-y-6 pb-12 px-4 animate-fade-in">
+    <div className="w-full max-w-xl mx-auto space-y-6 pb-12 px-4 animate-fade-in">
       {/* Official Header Banner with RetroReto Logo */}
       <div className="text-center space-y-4 pt-2">
         <div className="relative inline-block w-full">
