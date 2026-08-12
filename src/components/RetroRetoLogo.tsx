@@ -43,7 +43,7 @@ export const RetroRetoLogo: React.FC<RetroRetoLogoProps> = ({
           src={(size === 'lg' || size === 'xl') ? "https://retroreto.com/assets/logo-infiltrados-white.png" : "https://retroreto.com/assets/logo-infiltrados-white-small.png"}
           alt="Infiltrados RetroReto Logo"
           onError={() => setImgError(true)}
-          className={`object-contain shrink-0 max-w-full drop-shadow-[0_0_12px_rgba(0,240,255,0.4)] ${imgSizeClasses[size]}`}
+          className={`object-contain shrink-0 max-w-full drop-shadow-[0_4px_12px_rgba(0,0,0,0.85)] ${imgSizeClasses[size]}`}
           referrerPolicy="no-referrer"
         />
       ) : (

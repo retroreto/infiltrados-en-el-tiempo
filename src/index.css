@@ -1,1 +1,174 @@
 @import "tailwindcss";
+
+/* Smooth theme transitions */
+body, header, div, button, input, select, textarea, span, p, h1, h2, h3, h4 {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow, filter;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Logos Dark Drop Shadow (so white logo text pops in both Dark and Light mode) */
+img[src*="logo-infiltrados"] {
+  filter: drop-shadow(0px 4px 10px rgba(0, 0, 0, 0.85)) !important;
+}
+
+html.light img[src*="logo-infiltrados"] {
+  filter: drop-shadow(0px 4px 16px rgba(0, 0, 0, 0.95)) !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* LIGHT MODE THEME OVERRIDES (Clean white/slate-50 canvas, dark text)        */
+/* -------------------------------------------------------------------------- */
+
+html.light {
+  color-scheme: light;
+}
+
+/* General canvas background & main viewport text */
+html.light body,
+html.light .min-h-screen,
+html.light [class*="bg-[#0B0F19]"],
+html.light [class*="bg-[#0b0f19]"] {
+  background-color: #F8FAFC !important; /* Clean slate-50 canvas */
+  color: #0F172A !important;
+}
+
+/* Background ambient glow circles in light mode */
+html.light .fixed.pointer-events-none [class*="bg-cyan-500"] {
+  background-color: rgba(2, 132, 199, 0.08) !important;
+}
+html.light .fixed.pointer-events-none [class*="bg-red-500"] {
+  background-color: rgba(225, 29, 72, 0.06) !important;
+}
+
+/* Navigation Header */
+html.light header,
+html.light [class*="bg-[#0F131D]"] {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border-bottom-color: #E2E8F0 !important;
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Primary Container Cards (Bloque superior del video, Bloque de configuración del agente, etc.) */
+html.light [class*="bg-[#121622]"],
+html.light [class*="bg-[#121622]/90"],
+html.light [class*="bg-[#121622]/95"],
+html.light [class*="bg-[#121622]/80"],
+html.light [class*="bg-[#121622]/60"],
+html.light [class*="bg-[#0F131D]"],
+html.light [class*="bg-slate-900"],
+html.light [class*="bg-slate-950"] {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  color: #0F172A !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 10px -2px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Inner Boxes, Terminal Headers, Avatar Picker background, Pass & Play box */
+html.light [class*="bg-[#0B0E17]"],
+html.light [class*="bg-[#0B0E17]/80"],
+html.light [class*="bg-[#0B0E17]/90"],
+html.light [class*="bg-[#0B0E17]/95"] {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+
+/* Sub-buttons, Secondary Controls, Action Buttons */
+html.light [class*="bg-[#1B2234]"],
+html.light [class*="bg-[#252E46]"] {
+  background-color: #F1F5F9 !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+}
+
+html.light [class*="bg-[#1B2234]"]:hover,
+html.light [class*="bg-[#252E46]"]:hover {
+  background-color: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+
+/* Inputs (Text Box, Select, etc.) */
+html.light input[type="text"],
+html.light input[type="number"],
+html.light select,
+html.light textarea,
+html.light [class*="bg-[#0B0E17]"] input {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #CBD5E1 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+html.light input[type="text"]::placeholder,
+html.light input::placeholder {
+  color: #64748B !important;
+}
+
+html.light input[type="text"]:focus,
+html.light select:focus {
+  border-color: #0284C7 !important;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2) !important;
+}
+
+/* Text Colors in Light Mode */
+html.light .text-white,
+html.light [class*="text-white"] {
+  color: #0F172A !important;
+}
+
+html.light .text-slate-100,
+html.light .text-slate-200,
+html.light .text-slate-300,
+html.light [class*="text-slate-100"],
+html.light [class*="text-slate-200"],
+html.light [class*="text-slate-300"] {
+  color: #334155 !important;
+}
+
+html.light .text-slate-400,
+html.light [class*="text-slate-400"] {
+  color: #64748B !important;
+}
+
+/* Cyan/Sky Blue Brand Accents in Light Mode */
+html.light [class*="text-[#00F0FF]"] {
+  color: #0284C7 !important;
+}
+
+html.light [class*="border-[#00F0FF]"] {
+  border-color: rgba(2, 132, 199, 0.4) !important;
+}
+
+html.light [class*="bg-[#00F0FF]/10"],
+html.light [class*="bg-[#00F0FF]/15"],
+html.light [class*="bg-[#00F0FF]/20"] {
+  background-color: rgba(2, 132, 199, 0.12) !important;
+  color: #0284C7 !important;
+}
+
+/* Borders */
+html.light [class*="border-[#2B354C]"] {
+  border-color: #E2E8F0 !important;
+}
+
+/* Rules Modal */
+html.light [class*="bg-slate-950"] {
+  background-color: #FFFFFF !important;
+}
+
+/* EXCEPTIONS: Preserve White Text inside Red CTA / Gradient Buttons and Badges */
+html.light button.bg-gradient-to-r,
+html.light button.bg-gradient-to-r *,
+html.light [class*="bg-gradient-to-r"],
+html.light [class*="bg-gradient-to-r"] *,
+html.light [class*="bg-[#E52E2E]"],
+html.light [class*="bg-[#E52E2E]"] *,
+html.light [class*="bg-red-600"],
+html.light [class*="bg-red-600"] *,
+html.light [class*="bg-red-500"],
+html.light [class*="bg-red-500"] * {
+  color: #FFFFFF !important;
+}
+
+

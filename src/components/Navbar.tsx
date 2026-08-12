@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX, HelpCircle, ShieldAlert, Sparkles, Smartphone, Users, LogOut } from 'lucide-react';
+import { Volume2, VolumeX, HelpCircle, ShieldAlert, Sparkles, Smartphone, Users, LogOut, Sun, Moon } from 'lucide-react';
 import { soundEngine } from '../utils/AudioService';
 import { GameMode } from '../types';
 
 interface NavbarProps {
   roomCode?: string;
   mode?: GameMode;
+  theme?: 'dark' | 'light';
+  onToggleTheme?: () => void;
   onOpenRules: () => void;
   onExitGame?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ roomCode, mode, onOpenRules, onExitGame }) => {
+export const Navbar: React.FC<NavbarProps> = ({ roomCode, mode, theme = 'dark', onToggleTheme, onOpenRules, onExitGame }) => {
   const [muted, setMuted] = useState(soundEngine.getMuted());
 
   const handleToggleSound = () => {
@@ -29,7 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({ roomCode, mode, onOpenRules, onE
         <img
           src="https://retroreto.com/assets/logo-infiltrados-white-small.png"
           alt="RetroReto Logo"
-          className="h-7 w-auto object-contain drop-shadow-[0_0_8px_rgba(0,240,255,0.3)] transition-transform group-hover:scale-105"
+          className="h-7 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] transition-transform group-hover:scale-105"
           referrerPolicy="no-referrer"
         />
       </div>
@@ -53,6 +55,21 @@ export const Navbar: React.FC<NavbarProps> = ({ roomCode, mode, onOpenRules, onE
 
       {/* Right controls */}
       <div className="flex items-center gap-2">
+        {/* Sun / Moon Day-Night Theme Switcher */}
+        {onToggleTheme && (
+          <button
+            onClick={onToggleTheme}
+            className="p-2 bg-[#1B2234] hover:bg-[#252E46] text-slate-300 hover:text-[#00F0FF] rounded-xl border border-[#2B354C] transition-colors flex items-center justify-center"
+            title={theme === 'dark' ? "Cambiar a Modo Día" : "Cambiar a Modo Noche"}
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400 hover:rotate-45 transition-transform" />
+            ) : (
+              <Moon className="w-4 h-4 text-slate-700 hover:-rotate-12 transition-transform" />
+            )}
+          </button>
+        )}
+
         <button
           onClick={onOpenRules}
           className="p-2 bg-[#1B2234] hover:bg-[#252E46] text-slate-300 hover:text-[#00F0FF] rounded-xl border border-[#2B354C] transition-colors flex items-center justify-center"

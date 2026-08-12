@@ -34,6 +34,28 @@ export default function App() {
   const [incomingSignals, setIncomingSignals] = useState<WebRTCSignalData[]>([]);
   const [urlRoomCode, setUrlRoomCode] = useState<string>('');
 
+  // Day/Night Theme state ('dark' | 'light')
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return (localStorage.getItem('infiltrado_theme') as 'dark' | 'light') || 'dark';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('infiltrado_theme', theme);
+    const root = document.documentElement;
+    if (theme === 'light') {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    } else {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    }
+  }, [theme]);
+
+  const handleToggleTheme = () => {
+    soundEngine.playClick();
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   // Save profile changes to storage
   useEffect(() => {
     if (playerName) localStorage.setItem('infiltrado_player_name', playerName);
@@ -464,6 +486,8 @@ export default function App() {
       <Navbar
         roomCode={room?.roomCode}
         mode={room?.mode}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
         onOpenRules={() => setIsRulesOpen(true)}
         onExitGame={handleExitGame}
       />

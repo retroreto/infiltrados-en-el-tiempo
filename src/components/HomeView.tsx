@@ -97,7 +97,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <img
                 src="https://retroreto.com/assets/logo-infiltrados-white.png"
                 alt="RetroReto: Infiltrados en el tiempo"
-                className="w-full max-w-xs sm:max-w-sm h-auto object-contain drop-shadow-[0_0_15px_rgba(0,240,255,0.4)]"
+                className="w-full max-w-xs sm:max-w-sm h-auto object-contain drop-shadow-[0_4px_14px_rgba(0,0,0,0.85)]"
                 referrerPolicy="no-referrer"
               />
             </div>
